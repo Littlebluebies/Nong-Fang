@@ -18,3 +18,12 @@ export const RATE_LIMIT = { max: 20, windowMs: 5 * 60 * 1000 };
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 export const SESSION_COOKIE = "nf_session";
+
+/** เฟส 2: ความยาวสูงสุดของความจำหนึ่งรายการ (ตัวอักษร) ตรงกับ check ในตาราง memories */
+export const MEMORY_MAX_CHARS = 200;
+
+/** เฟส 2: recall_memory คืนความจำล่าสุดกี่รายการ */
+export const RECALL_LIMIT = 20;
+
+/** เฟส 2: LLM เรียก tool แล้วตอบต่อได้กี่รอบต่อหนึ่งข้อความ (กัน loop ไม่จบและคุมค่าใช้จ่าย) */
+export const MAX_TOOL_STEPS = 3;

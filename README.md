@@ -54,6 +54,7 @@ git clone https://github.com/Littlebluebies/Nong-Fang.git
 cd Nong-Fang
 npm install
 cp .env.example .env.local   # แล้วใส่ค่าจริงทุกตัว
+npm run db:migrate           # เฟส 2: สร้างตารางใน DB (ข้ามได้ถ้าไม่ใส่ DATABASE_URL)
 npm run dev
 ```
 
@@ -62,7 +63,8 @@ npm run dev
 | คำสั่ง | ใช้ทำอะไร |
 | --- | --- |
 | `npm run dev` | รันเครื่องตัวเอง |
-| `npm test` | unit test ด่านคำเสี่ยง, session และ rate limit |
+| `npm test` | unit test ด่านคำเสี่ยง, session, rate limit, tools และ prompt |
+| `npm run db:migrate` | สร้างหรืออัปเดตตารางใน PostgreSQL |
 | `npm run typecheck` | ตรวจ type |
 | `npm run build` | build แบบ production |
 
@@ -86,8 +88,8 @@ npm run dev
 | อ่านทำความเข้าใจโค้ดเฟส 1 และแบบฝึกหัดแก้โค้ด | ผู้พัฒนา | กำลังทำ |
 | ติดตั้ง ทดสอบกับชุดบทสนทนา และ deploy | ผู้พัฒนา | กำลังทำ |
 | ปรับ system prompt จากการใช้จริง (v2 ขึ้นไป) | ผู้พัฒนา | ยังไม่เริ่ม |
-| แผนเฟส 2 ([`docs/phase-2-plan.md`](docs/phase-2-plan.md)) | Claude ร่าง ผู้พัฒนาอ่านและอนุมัติ | รออนุมัติ |
-| เฟส 2: tools และระบบความจำ | ผู้พัฒนาเขียน Claude รีวิว | ยังไม่เริ่ม |
+| แผนเฟส 2 ([`docs/phase-2-plan.md`](docs/phase-2-plan.md)) | Claude ร่าง ผู้พัฒนาอ่านและตัดสินใจ | รอตัดสินใจบางข้อ |
+| โค้ดเฟส 2: ฐานข้อมูล, tools ความจำ 3 ตัว, system prompt v2, unit test | Claude เขียน (ผู้พัฒนาเปลี่ยนจากแผนเดิมที่จะเขียนเอง) ผู้พัฒนารีวิว | กำลังทำ |
 
 ## Tech stack
 

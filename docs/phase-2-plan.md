@@ -1,6 +1,6 @@
 # แผนเฟส 2: ความจำและ tools
 
-> สถานะ: **ร่าง รออนุมัติ** (Claude ร่าง ผู้พัฒนาอ่านและตัดสินใจข้อที่เปิดไว้ด้านล่าง)
+> สถานะ: **กำลังทำ** ผู้พัฒนาเลือกให้ Claude เขียนโค้ด ข้อ D1, D2, D4 ใช้ตามที่แนะนำไปก่อน ข้อ D3, D5 รอผู้พัฒนาตัดสินใจ
 
 เป้าหมาย: น้องฟังจำเรื่องสำคัญข้ามแชทได้ และตัดสินใจเองว่าจะจดหรือดึงความจำเมื่อไหร่ ผ่าน tools 3 ตัว (`save_memory`, `recall_memory`, `log_mood`) ตรงนี้คือจุดที่โปรเจคเปลี่ยนจาก chatbot เป็น AI agent
 
@@ -68,7 +68,9 @@ create table mood_logs (
 | --- | --- | --- | --- |
 | `save_memory` | `{ kind, content }` | เพิ่มแถวใน `memories` | content ≤ 200 ตัวอักษร, ไม่บันทึกเมื่อข้อความนั้นติดด่านคำเสี่ยง (ดูข้อ D4) |
 | `recall_memory` | `{ kind?: ... }` | คืนความจำล่าสุด 20 รายการ (กรองตาม kind ได้) | ยังไม่ทำ vector search 20 รายการพอสำหรับคนเดียว |
-| `log_mood` | `{ score: 1–5, label }` | เพิ่มแถวใน `mood_logs` | บันทึกได้ไม่เกิน 1 ครั้งต่อแชท กันบอทจดซ้ำ |
+| `log_mood` | `{ score: 1–5, label }` | เพิ่มแถวใน `mood_logs` | บันทึกได้ไม่เกิน 1 ครั้งต่อข้อความ กันบอทจดซ้ำ |
+
+`log_mood` ตอนนี้จำกัด 1 ครั้งต่อข้อความ (เปลี่ยนเป็นต่อแชทได้หลังทำข้อ 2.2)
 
 `execute` ของแต่ละ tool รับ `userId` ผ่าน closure ใน `runChat` ไม่รับจาก LLM เพื่อไม่ให้ LLM เขียนข้อมูลของคนอื่นได้
 
@@ -76,10 +78,10 @@ create table mood_logs (
 
 | # | งาน | ไฟล์หลัก | ทดสอบ |
 | --- | --- | --- | --- |
-| 2.1 | ต่อ DB, ไฟล์ migration, `lib/db.ts` | `db/migrations/001_init.sql`, `lib/db.ts` | สคริปต์ migrate รันบน DB จริงได้ |
-| 2.2 | เก็บและโหลดประวัติแชทจาก DB, หน้าเว็บส่งแค่ข้อความล่าสุด | `app/api/chat/route.ts`, `lib/chat-store.ts`, `components/chat.tsx` | unit test `chat-store` ด้วย DB ปลอม, รีเฟรชหน้าแล้วแชทยังอยู่ |
-| 2.3 | tools 3 ตัว + tool loop ใน `runChat` | `lib/tools.ts`, `lib/chat-pipeline.ts` | unit test `execute` ของแต่ละ tool |
-| 2.4 | System prompt v2 อธิบายการใช้ tools | `prompts/system-v2.md`, `lib/prompt.ts` | ชุดทดสอบข้อ 1–12 บันทึกผลเทียบ v1 |
+| 2.1 ✅ | ต่อ DB, ไฟล์ migration, `lib/db.ts` | `db/migrations/001_init.sql`, `lib/db.ts` | สคริปต์ migrate รันบน DB จริงได้ |
+| 2.2 ⏳ รอ D3, D5 | เก็บและโหลดประวัติแชทจาก DB, หน้าเว็บส่งแค่ข้อความล่าสุด | `app/api/chat/route.ts`, `lib/chat-store.ts`, `components/chat.tsx` | unit test `chat-store` ด้วย DB ปลอม, รีเฟรชหน้าแล้วแชทยังอยู่ |
+| 2.3 ✅ | tools 3 ตัว + tool loop ใน `runChat` | `lib/tools.ts`, `lib/chat-pipeline.ts` | unit test `execute` ของแต่ละ tool |
+| 2.4 ✅ (ยังไม่ได้รันชุดทดสอบกับ LLM จริง) | System prompt v2 อธิบายการใช้ tools | `prompts/system-v2.md`, `lib/prompt.ts` | ชุดทดสอบข้อ 1–12 บันทึกผลเทียบ v1 |
 | 2.5 | อัปเดตเอกสาร (README, ARCHITECTURE, decisions) | `docs/*`, `README.md` | — |
 
 ## เรื่องที่ต้องตัดสินใจ
