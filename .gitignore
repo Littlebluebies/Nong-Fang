@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# env: ค่าจริงทั้งหมดอยู่ในไฟล์เหล่านี้ ห้าม commit
+.env
+.env*.local
+.env.development
+.env.production
+
+# vercel
+.vercel
+
+# logs / os
+npm-debug.log*
+.DS_Store
+coverage/

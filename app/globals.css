@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* โทนสีอบอุ่นแบบกระดาษ + เขียวเสจสงบๆ เปลี่ยนตามโหมดมืดของเครื่องอัตโนมัติ */
+:root {
+  --bg: #f6f2eb;
+  --surface: #fffdf9;
+  --ink: #2a2724;
+  --muted: #716b63;
+  --line: #e4ddd2;
+  --accent: #4b7765;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2ebe5;
+  --care: #fbf0e1;
+  --care-line: #e8cda6;
+  --care-ink: #5c4426;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161514;
+    --surface: #201e1c;
+    --ink: #ece7df;
+    --muted: #a59f96;
+    --line: #34312d;
+    --accent: #8dbda8;
+    --accent-ink: #13201b;
+    --accent-soft: #24302b;
+    --care: #2a2219;
+    --care-line: #5b4730;
+    --care-ink: #f0dcc0;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-care: var(--care);
+  --color-care-line: var(--care-line);
+  --color-care-ink: var(--care-ink);
+  --font-sans: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+}
+
+/* จุดสามจุดตอนบอทกำลังคิด */
+@keyframes nf-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.nf-dot {
+  animation: nf-dot 1.2s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nf-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
