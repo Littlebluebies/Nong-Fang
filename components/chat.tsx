@@ -37,11 +37,19 @@ export default function Chat() {
   const [persistent, setPersistent] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
-  const chatIdRef = useRef<string | null>(null);
-  chatIdRef.current = chatId;
+  const chatRef = useRef({ chatId, persistent });
+  chatRef.current = { chatId, persistent };
 
+  // มี DB → ส่งแค่ข้อความล่าสุด เพราะ server โหลดประวัติจาก DB เอง (แชทยาวแค่ไหนก็ไม่ติดขีดจำกัด 200 ข้อความ)
   const transport = useMemo(
-    () => new DefaultChatTransport<ChatMessage>({ api: "/api/chat", body: () => ({ chatId: chatIdRef.current }) }),
+    () =>
+      new DefaultChatTransport<ChatMessage>({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => {
+          const { chatId, persistent } = chatRef.current;
+          return { body: { chatId, messages: persistent ? messages.slice(-1) : messages } };
+        },
+      }),
     [],
   );
   const { messages, sendMessage, status, error, regenerate, stop, setMessages } = useChat<ChatMessage>({ transport });
