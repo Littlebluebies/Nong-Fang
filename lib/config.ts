@@ -27,3 +27,6 @@ export const RECALL_LIMIT = 20;
 
 /** เฟส 2: LLM เรียก tool แล้วตอบต่อได้กี่รอบต่อหนึ่งข้อความ (กัน loop ไม่จบและคุมค่าใช้จ่าย) */
 export const MAX_TOOL_STEPS = 3;
+
+/** เฟส 2: เปิดหน้าเว็บแล้วโหลดข้อความของแชทล่าสุดมาแสดงสูงสุดกี่ข้อความ */
+export const MAX_DISPLAY_MESSAGES = 200;

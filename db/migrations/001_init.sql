@@ -12,6 +12,7 @@ create table messages (
   chat_id     uuid not null references chats(id) on delete cascade,
   role        text not null check (role in ('user', 'assistant')),
   parts       jsonb not null,
+  metadata    jsonb,
   created_at  timestamptz not null default now()
 );
 create index messages_chat_created_idx on messages (chat_id, created_at);

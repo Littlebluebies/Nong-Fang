@@ -41,7 +41,11 @@ export async function runChat(input: {
   const crisis = detectCrisis(lastUserMessage ? getMessageText(lastUserMessage) : "");
 
   // 2) รวม context: system prompt + ประวัติแค่ช่วงล่าสุด
-  const recent = messages.slice(-MAX_HISTORY_MESSAGES);
+  // ส่งให้ LLM เฉพาะข้อความตัวอักษร ประวัติจาก DB มี tool part ด้วย แต่ไม่จำเป็นต่อการคุยต่อ
+  const recent = messages
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((m) => ({ ...m, parts: m.parts.filter((p) => p.type === "text") }))
+    .filter((m) => m.parts.length > 0);
 
   // 3) เรียก LLM ถ้ามีที่เก็บความจำ LLM เรียก tool แล้วตอบต่อได้ไม่เกิน MAX_TOOL_STEPS รอบ
   const tools = memoryStore ? createTools({ userId, crisis, store: memoryStore }) : undefined;
