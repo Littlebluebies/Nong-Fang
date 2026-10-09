@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { APP_NAME } from "./config";
 
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2";
 
 const CRISIS_ADDENDUM = `
 
@@ -23,7 +23,13 @@ function loadBasePrompt(): string {
   return cached;
 }
 
-export function buildSystemPrompt(options: { crisis: boolean }): string {
-  const base = loadBasePrompt();
+// ส่วนความจำใน prompt อยู่ระหว่าง <!-- memory --> กับ <!-- /memory --> ตัดออกเมื่อไม่มี tools ให้ใช้
+const MEMORY_SECTION = /<!-- memory -->([\s\S]*?)<!-- \/memory -->\n?/;
+
+export function buildSystemPrompt(options: { crisis: boolean; memory: boolean }): string {
+  const loaded = loadBasePrompt();
+  const base = options.memory
+    ? loaded.replace(MEMORY_SECTION, (_, section: string) => section.trimStart())
+    : loaded.replace(MEMORY_SECTION, "");
   return options.crisis ? base + CRISIS_ADDENDUM : base;
 }

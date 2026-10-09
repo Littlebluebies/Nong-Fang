@@ -23,9 +23,10 @@ flowchart LR
   Web["เว็บแชท"] --> Safety
   subgraph runChat
     Safety["1. ด่านคำเสี่ยง<br/>โค้ดล้วน"] --> Context["2. รวม context<br/>prompt + 20 ข้อความล่าสุด"]
-    Context --> LLM["3. เรียก LLM"]
+    Context --> LLM["3. LLM + tools"]
   end
   LLM --> OpenAI["OpenAI API"]
+  LLM -- "จด / ดึงความจำ" --> DB[("PostgreSQL")]
 ```
 
 รายละเอียดเพิ่มเติมใน [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
@@ -34,7 +35,8 @@ flowchart LR
 
 - **ด่านคำเสี่ยงเป็นโค้ด ไม่ฝากไว้กับ LLM:** LLM อาจตอบพลาดได้เสมอ การ์ดสายด่วนจึงมาจากโค้ดที่ทำงานเหมือนเดิมทุกครั้งและมี unit test ครอบคลุม แม้ LLM ตอบไม่สำเร็จ หน้าเว็บก็ยังแสดงเบอร์สายด่วน
 - **ส่งประวัติให้ LLM แค่ 20 ข้อความล่าสุด:** ค่าใช้จ่ายต่อข้อความจึงคงที่ ไม่โตตามความยาวแชท
-- **ไม่เก็บเนื้อหาแชทใน log:** เรื่องที่คนระบายเป็นข้อมูลอ่อนไหว log จึงเก็บแค่จำนวน token และสถานะ
+- **ไม่เก็บเนื้อหาแชทใน log:** เรื่องที่คนระบายเป็นข้อมูลอ่อนไหว log จึงเก็บแค่จำนวน token และสถานะ (เฟส 2 เก็บแชทใน DB ของเราเอง ซึ่งต้องใส่รหัสผ่านถึงจะเห็น และมีปุ่มลบแชท)
+- **ความจำผ่าน tools:** LLM ตัดสินใจเองว่าจะจดหรือดึงความจำเมื่อไหร่ ไม่ยัดความจำทั้งหมดลง prompt ข้อความที่ติดด่านคำเสี่ยงไม่ถูกจดเป็นความจำ
 - **ใส่รหัสผ่านตั้งแต่เฟสแรก:** URL บน Vercel เปิดสาธารณะ ใครเจอก็ใช้เงิน API ได้
 - **System prompt มีเวอร์ชัน:** แก้ทุกครั้งสร้างไฟล์ใหม่ แล้วรัน [ชุดทดสอบ](tests/conversations.md) เทียบผล
 - **`runChat` ไม่ผูกกับช่องทาง:** เพิ่ม LINE ในเฟส 3 ได้โดยไม่เขียน logic ซ้ำ
@@ -54,6 +56,7 @@ git clone https://github.com/Littlebluebies/Nong-Fang.git
 cd Nong-Fang
 npm install
 cp .env.example .env.local   # แล้วใส่ค่าจริงทุกตัว
+npm run db:migrate           # เฟส 2: สร้างตารางใน DB (ข้ามได้ถ้าไม่ใส่ DATABASE_URL)
 npm run dev
 ```
 
@@ -62,7 +65,8 @@ npm run dev
 | คำสั่ง | ใช้ทำอะไร |
 | --- | --- |
 | `npm run dev` | รันเครื่องตัวเอง |
-| `npm test` | unit test ด่านคำเสี่ยง, session และ rate limit |
+| `npm test` | unit test ด่านคำเสี่ยง, session, rate limit, tools และ prompt |
+| `npm run db:migrate` | สร้างหรืออัปเดตตารางใน PostgreSQL |
 | `npm run typecheck` | ตรวจ type |
 | `npm run build` | build แบบ production |
 
@@ -86,16 +90,18 @@ npm run dev
 | อ่านทำความเข้าใจโค้ดเฟส 1 และแบบฝึกหัดแก้โค้ด | ผู้พัฒนา | กำลังทำ |
 | ติดตั้ง ทดสอบกับชุดบทสนทนา และ deploy | ผู้พัฒนา | กำลังทำ |
 | ปรับ system prompt จากการใช้จริง (v2 ขึ้นไป) | ผู้พัฒนา | ยังไม่เริ่ม |
-| เฟส 2: tools และระบบความจำ | ผู้พัฒนาเขียน Claude รีวิว | ยังไม่เริ่ม |
+| แผนเฟส 2 ([`docs/phase-2-plan.md`](docs/phase-2-plan.md)) | Claude ร่าง ผู้พัฒนาอ่านและตัดสินใจ | เสร็จ |
+| โค้ดเฟส 2: ฐานข้อมูล, เก็บแชท, tools ความจำ 3 ตัว, system prompt v2, unit test | Claude เขียน (ผู้พัฒนาเปลี่ยนจากแผนเดิมที่จะเขียนเอง) ผู้พัฒนารีวิว | รอรีวิว |
+| ทดสอบเฟส 2 กับ DB และ LLM จริง (ชุดบทสนทนาข้อ 1–12) | ผู้พัฒนา | ยังไม่เริ่ม |
 
 ## Tech stack
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Vercel AI SDK · OpenAI API · zod · Vitest · Vercel
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Vercel AI SDK · OpenAI API · PostgreSQL (Neon) · zod · Vitest · Vercel
 
 ## Roadmap
 
 - [ ] **เฟส 1 (กำลังทำ):** เว็บแชท, บุคลิกสองโหมด, ด่านคำเสี่ยง, รหัสผ่าน
-- [ ] **เฟส 2:** เก็บประวัติใน PostgreSQL และเพิ่ม tools (`save_memory`, `log_mood`, `recall_memory`) ให้บอทตัดสินใจเองว่าจะจดหรือดึงความจำเมื่อไหร่ ตรงนี้คือจุดที่โปรเจคกลายเป็น AI agent
+- [ ] **เฟส 2 (โค้ดเสร็จ รอทดสอบ):** เก็บประวัติใน PostgreSQL และเพิ่ม tools (`save_memory`, `log_mood`, `recall_memory`) ให้บอทตัดสินใจเองว่าจะจดหรือดึงความจำเมื่อไหร่ ตรงนี้คือจุดที่โปรเจคกลายเป็น AI agent ([แผน](docs/phase-2-plan.md))
 - [ ] **เฟส 3:** ย้ายไปอยู่ใน LINE และทักทายตอนเช้าวันละครั้ง
 
 ## License

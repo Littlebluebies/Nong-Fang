@@ -1,11 +1,12 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { APP_NAME, MAX_MESSAGE_CHARS } from "@/lib/config";
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/safety";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, ChatState } from "@/lib/types";
 
 const STARTERS = [
   { label: "อยากระบายหน่อย", text: "อยากระบายหน่อย ขอแค่มีคนฟัง" },
@@ -31,7 +32,27 @@ function readError(error: Error | undefined): string {
 export default function Chat() {
   const router = useRouter();
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, error, regenerate, stop, setMessages } = useChat<ChatMessage>();
+
+  // เฟส 2: ถ้าเซิร์ฟเวอร์มี DB แชทจะถูกเก็บไว้ chatId บอกว่ากำลังคุยในแชทไหน (null = แชทใหม่)
+  const [persistent, setPersistent] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const chatRef = useRef({ chatId, persistent });
+  chatRef.current = { chatId, persistent };
+
+  // มี DB → ส่งแค่ข้อความล่าสุด เพราะ server โหลดประวัติจาก DB เอง (แชทยาวแค่ไหนก็ไม่ติดขีดจำกัด 200 ข้อความ)
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport<ChatMessage>({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => {
+          const { chatId, persistent } = chatRef.current;
+          return { body: { chatId, messages: persistent ? messages.slice(-1) : messages } };
+        },
+      }),
+    [],
+  );
+  const { messages, sendMessage, status, error, regenerate, stop, setMessages } = useChat<ChatMessage>({ transport });
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -46,6 +67,50 @@ export default function Chat() {
   useEffect(() => {
     if (errorText === "กรุณาเข้าสู่ระบบก่อน") router.replace("/login");
   }, [errorText, router]);
+
+  // เปิดหน้าเว็บ → โหลดแชทล่าสุดจาก DB (ถ้ามี)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/chat")
+      .then(async (res) => {
+        if (res.status === 401) return router.replace("/login");
+        if (!res.ok) return;
+        const state = (await res.json()) as ChatState;
+        if (cancelled || !state.persistent) return;
+        setPersistent(true);
+        setChatId(state.chatId);
+        setMessages(state.messages);
+      })
+      .catch(() => {
+        // โหลดไม่ได้ก็เริ่มแชทใหม่ได้ตามปกติ
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router, setMessages]);
+
+  // เซิร์ฟเวอร์บอก chatId มากับคำตอบแรกของแชทใหม่
+  useEffect(() => {
+    const id = messages.findLast((m) => m.role === "assistant")?.metadata?.chatId;
+    if (id) setChatId(id);
+  }, [messages]);
+
+  function newChat() {
+    stop();
+    setMessages([]);
+    setChatId(null);
+  }
+
+  async function deleteChat() {
+    if (!chatId) return newChat();
+    if (!window.confirm("ลบแชทนี้ทิ้งเลยไหม เรื่องที่น้องฟังจดไว้เป็นความจำจะยังอยู่")) return;
+    const res = await fetch(`/api/chat?id=${encodeURIComponent(chatId)}`, { method: "DELETE" });
+    if (res.ok || res.status === 404) newChat();
+    else window.alert("ลบแชทไม่สำเร็จ ลองอีกครั้งนะ");
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -99,13 +164,19 @@ export default function Chat() {
           {messages.length > 0 && (
             <button
               type="button"
-              onClick={() => {
-                stop();
-                setMessages([]);
-              }}
+              onClick={newChat}
               className="rounded-full px-3 py-1.5 text-muted hover:bg-surface hover:text-ink"
             >
-              เริ่มใหม่
+              {persistent ? "แชทใหม่" : "เริ่มใหม่"}
+            </button>
+          )}
+          {persistent && chatId && !busy && (
+            <button
+              type="button"
+              onClick={() => void deleteChat()}
+              className="rounded-full px-3 py-1.5 text-muted hover:bg-surface hover:text-ink"
+            >
+              ลบแชท
             </button>
           )}
           <button
@@ -119,7 +190,9 @@ export default function Chat() {
       </header>
 
       <main className="flex-1 overflow-y-auto px-4" aria-live="polite">
-        {messages.length === 0 ? (
+        {!loaded ? (
+          <p className="flex h-full items-center justify-center text-muted">กำลังโหลด…</p>
+        ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center pb-10 text-center">
             <p className="text-2xl font-semibold">วันนี้เป็นยังไงบ้าง</p>
             <p className="mt-2 max-w-sm text-muted">
