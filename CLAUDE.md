@@ -45,3 +45,17 @@ Env vars are documented in `.env.example` (`OPENAI_API_KEY`, `OPENAI_MODEL`, `AP
 - Never log chat content or tool inputs. Logs are single-line JSON with metadata only (event, token counts, crisis flag, prompt version, tool names).
 - Schema changes go in a new numbered file in `db/migrations/`; applied files are tracked in `schema_migrations` and never re-run.
 - Record scope or stack decisions in `docs/decisions.md` (newest first). Keep `docs/ARCHITECTURE.md` and the README's AI-collaboration table in sync when finishing a piece of work.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `Littlebluebies/Nong-Fang`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: a root `CONTEXT.md`, with decisions recorded in `docs/decisions.md` (no `docs/adr/`). See `docs/agents/domain.md`.
